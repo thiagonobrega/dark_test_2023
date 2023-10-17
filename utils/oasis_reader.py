@@ -62,10 +62,10 @@ def extract_itens_from_json(input_file_path, target_inst=None, remove_att_list=N
                                     pass
 
                             set_of_itens.append(doc)
-                            print(doc)
-                            if i > 10:
-                                break
-                            i+=1
+                            # print(doc)
+                            # if i > 10:
+                            #     break
+                            # i+=1
                     else:
                         short_prefix = prefix.split('.item.')[-1]
                         if (short_prefix != 'response.docs.item' and value != None):
