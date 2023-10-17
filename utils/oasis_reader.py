@@ -3,7 +3,7 @@ import zipfile
 import pandas as pd
 
 
-def extract_itens_from_json(input_file_path, target_inst=None):
+def extract_itens_from_json(input_file_path, target_inst=None, remove_att_list=None):
     """
     - id - o id do documento no Oasisbr
     - oai_identifier_str - id externo que vem do repositório de origem
@@ -22,6 +22,10 @@ def extract_itens_from_json(input_file_path, target_inst=None):
     - url - url externa para o documento
     """
     set_of_itens = []
+    i = 0
+
+    # lista de atributos que sao lista
+    att_name_list = ['author', 'format', 'url', 'language', 'eu_rights_str_mv', 'publishDate', 'topic']
 
     with zipfile.ZipFile(input_file_path, "r") as zip_file:
         filename= zip_file.namelist()[0]
@@ -36,10 +40,6 @@ def extract_itens_from_json(input_file_path, target_inst=None):
                     if event == 'start_map':
                         doc = {}  # Inicie um novo dicionário para cada documento "docs"
                     elif event == 'end_map':
-                    # Faça algo com o documento, por exemplo, imprimir ou processar
-                    # i+=1
-                    # if i > limit:
-                    #     break
                         if target_inst!= None:
                             try:
                                 if target_inst.get(doc['instacron_str']) != None:
@@ -47,11 +47,39 @@ def extract_itens_from_json(input_file_path, target_inst=None):
                             except KeyError:
                                 pass
                         else:
+                            for att in att_name_list:
+                                try:
+                                    if len(doc[att]) == 1:
+                                        doc[att] = doc[att][0]
+                                except KeyError:
+                                    pass
+                            
+                            #remover atributos a pedido do usuario
+                            for att in remove_att_list:
+                                try:
+                                    del doc[att]
+                                except KeyError:
+                                    pass
+
                             set_of_itens.append(doc)
+                            print(doc)
+                            if i > 10:
+                                break
+                            i+=1
                     else:
-                        short_prexif = prefix.split('.')[-1]
-                        if short_prexif != 'item':
-                            doc[short_prexif] = value
+                        short_prefix = prefix.split('.item.')[-1]
+                        if (short_prefix != 'response.docs.item' and value != None):
+                            short_prefix = short_prefix.split('.')[0]
+                            # verifica se o atributo e do tipo lista
+                            if short_prefix in att_name_list:
+                                if short_prefix in doc:
+                                    doc[short_prefix] = []
+                                    doc[short_prefix].append(value)
+                            else: # adiciona valores que nao sao lista
+                                doc[short_prefix] =  value
+                        
+                        
+
                 elif prefix == 'response.docs':
                     in_docs = True
 
