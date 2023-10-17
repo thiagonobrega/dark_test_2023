@@ -2,8 +2,26 @@ import ijson
 import zipfile
 import pandas as pd
 
+def processar_item(doc,remove_att_list, att_name_list):
+    for att in remove_att_list:
+        try:
+            del doc[att]
+        except KeyError:
+            pass
+                            
+                            #converte as listas
+    for att in att_name_list:
+        try:
+            if len(doc[att]) > 1:
+                doc[att] =';'.join(doc[att])
+            else:
+                doc[att] = doc[att][0]     
+        except KeyError:
+            pass
+    
+    return doc
 
-def extract_itens_from_json(input_file_path, target_inst=None, remove_att_list=None):
+def extract_itens_from_json(input_file_path, filtro_inst=None, remove_att_list=None):
     """
     - id - o id do documento no Oasisbr
     - oai_identifier_str - id externo que vem do repositório de origem
@@ -40,45 +58,35 @@ def extract_itens_from_json(input_file_path, target_inst=None, remove_att_list=N
                     if event == 'start_map':
                         doc = {}  # Inicie um novo dicionário para cada documento "docs"
                     elif event == 'end_map':
-                        if target_inst!= None:
+                        # leu tudo
+                        
+                        doc_clean = processar_item(doc,remove_att_list, att_name_list)
+
+                        if filtro_inst!= None:
                             try:
-                                if target_inst.get(doc['instacron_str']) != None:
-                                    set_of_itens.append(doc)
+                                if filtro_inst.get(doc_clean['instacron_str']) != None:
+                                    set_of_itens.append(doc_clean)
                             except KeyError:
                                 pass
                         else:
-                            for att in att_name_list:
-                                try:
-                                    if len(doc[att]) == 1:
-                                        doc[att] = doc[att][0]
-                                except KeyError:
-                                    pass
+                            set_of_itens.append(doc_clean)
                             
-                            #remover atributos a pedido do usuario
-                            for att in remove_att_list:
-                                try:
-                                    del doc[att]
-                                except KeyError:
-                                    pass
 
-                            set_of_itens.append(doc)
-                            # print(doc)
-                            # if i > 10:
-                            #     break
-                            # i+=1
                     else:
+                        # processa o json
                         short_prefix = prefix.split('.item.')[-1]
                         if (short_prefix != 'response.docs.item' and value != None):
                             short_prefix = short_prefix.split('.')[0]
+                            # print("\t ",short_prefix,value)
                             # verifica se o atributo e do tipo lista
                             if short_prefix in att_name_list:
-                                if short_prefix in doc:
+                                if short_prefix not in doc:
                                     doc[short_prefix] = []
                                     doc[short_prefix].append(value)
+                                else:
+                                    doc[short_prefix].append(value)
                             else: # adiciona valores que nao sao lista
-                                doc[short_prefix] =  value
-                        
-                        
+                                doc[short_prefix] =  value              
 
                 elif prefix == 'response.docs':
                     in_docs = True
@@ -87,3 +95,4 @@ def extract_itens_from_json(input_file_path, target_inst=None, remove_att_list=N
     zip_file.close()
     json_file.close()
     return set_of_itens
+
