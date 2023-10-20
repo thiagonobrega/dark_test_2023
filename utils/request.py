@@ -14,7 +14,7 @@ class Response:
 class APIRequest:
     def get(self, url):
         response = requests.get(url)
-        return self.__get_responses(response)
+        return self.__get_responses(response, timeout=10)
 
     def post(self, url, payload, headers):
         if payload == None:

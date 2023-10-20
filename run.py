@@ -69,8 +69,9 @@ def get_pids(input_df,cost_flag):
                 status = 'error'
         
             oasis_dark_map[oasis_id] = {'dark' : ark, 'status' :  status , 'exec_time' : resp_time , 'amount' : amount , 'action' : 'assign_pid'}
-        except:
+        except Exception as e:
             print(f'\t\t > error ao salvar {oasis_id}')
+            oasis_dark_map[oasis_id] = {'dark' : '-', 'status' :  'error' , 'exec_time' : 999 , 'amount' : 0 , 'action' : 'assign_pid' , 'error_detail' : e}
 
     return oasis_dark_map
 
@@ -129,10 +130,12 @@ def call_pid_method(cmd,input_df,pid_map,cost_flag):
             # print(request[2])
             if request[2].status_code == 200:
                 status = 'ok'
+                action_map[oasis_id] = {'dark' : dark_pid, 'status' :  status , 'exec_time' : resp_time , 'amount' : amount , 'action' : cmd }
             else:
                 status = 'error'
+                action_map[oasis_id] = {'dark' : dark_pid, 'status' :  status , 'exec_time' : resp_time , 'amount' : amount , 'action' : cmd , 'error_detail' : request[2]}
             #
-            action_map[oasis_id] = {'dark' : dark_pid, 'status' :  status , 'exec_time' : resp_time , 'amount' : amount , 'action' : cmd}
+            
         
     
     
@@ -196,4 +199,4 @@ if __name__ == "__main__":
     a = pd.concat([pd.DataFrame(pid_map).T, pd.DataFrame(urls).T, pd.DataFrame(pids).T, pd.DataFrame(payl).T])
     a['oasis_id'] = a.index
     a.reset_index(inplace=True)
-    a.to_csv(name+'.csv',index=False)
+    a.to_csv(name+'.csv',index=False,sep=';')
