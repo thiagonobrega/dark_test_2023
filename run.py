@@ -59,23 +59,25 @@ def get_pids(input_df,cost_flag):
         url      = row.get('url')
         # print(index)
         # request, resp_time = measure_response_time(cc.request_pid)
-        request, resp_time, amount = measure_tx_params(dark_gw,cost_flag,cc.request_pid)
         try:
-            ark = request.as_dict['ark']
-            status = 'ok'
-        except KeyError:
-            ark = '-'
-            status = 'error'
-    
-    
-        oasis_dark_map[oasis_id] = {'dark' : ark, 'status' :  status , 'exec_time' : resp_time , 'amount' : amount , 'action' : 'assign_pid'}
+            request, resp_time, amount = measure_tx_params(dark_gw,cost_flag,cc.request_pid)
+            try:
+                ark = request.as_dict['ark']
+                status = 'ok'
+            except KeyError:
+                ark = '-'
+                status = 'error'
+        
+            oasis_dark_map[oasis_id] = {'dark' : ark, 'status' :  status , 'exec_time' : resp_time , 'amount' : amount , 'action' : 'assign_pid'}
+        except:
+            print(f'\t\t > error ao salvar {oasis_id}')
 
     return oasis_dark_map
 
 def call_pid_method(cmd,input_df,pid_map,cost_flag):
 
     dark_gw = getDarkGateway()
-    cc = HyperDriveClient()
+    cc = HyperDriveClient(hyperdrive_version='async')
     cr_client = CrossrefClient()
 
     action_map = {}
@@ -146,6 +148,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="HyperDrive Experiment Runner")
     parser.add_argument("name", type=str, help="Nome do experimento")
+    parser.add_argument("file", type=str, help="Path do arquivo")
     parser.add_argument("sample_size", type=int, help="Tamanho do sample")
     parser.add_argument('--get-gas-cost', default=False, action='store_true',
                             help='Ativar o cálculo do custo de gás')
@@ -153,6 +156,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     name = args.name
+    file = args.file
     get_gas_cost = args.get_gas_cost
     sample_size = args.sample_size
 
@@ -160,13 +164,16 @@ if __name__ == "__main__":
 
     if not name:
         sys.exit("Erro: O nome é obrigatório. Utilize o argumento 'name'.")
+    if not file:
+        sys.exit("Erro: O nome é obrigatório. Utilize o argumento 'file'.")
     if not sample_size:
         sys.exit("Erro: O nome é obrigatório. Utilize o argumento 'sample_size'.")
     
     sample_size = int(sample_size)
 
     print(f"Running {name} [ {sample_size} samples]")
-    df=pd.read_json('notebooks/pb-data.json')
+    # df=pd.read_json('notebooks/pb-data.json')
+    df=pd.read_json(file)
 
     sample_df = df.sample(sample_size)
     
